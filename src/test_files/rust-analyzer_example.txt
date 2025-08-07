@@ -1,0 +1,1 @@
+rust-analyzer 0.3.2555-standalone

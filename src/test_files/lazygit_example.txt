@@ -1,0 +1,1 @@
+commit=66caa25dcd4c247589e6adc71a6bc088678f3212, build date=2025-05-03T02:30:12Z, build source=binaryRelease, version=0.50.0, os=linux, arch=amd64, git version=2.34.1

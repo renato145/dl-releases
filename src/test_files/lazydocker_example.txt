@@ -1,0 +1,6 @@
+Version: 0.24.1
+Date: 2024-11-23T06:32:15Z
+BuildSource: binaryRelease
+Commit: be051153525b018a46f71a2b2ed42cde39a1110c
+OS: linux
+Arch: amd64
