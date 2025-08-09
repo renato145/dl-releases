@@ -4,7 +4,10 @@ use futures::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
 use reqwest::Client;
 use std::path::{Path, PathBuf};
-use tokio::{fs::File, io::AsyncWriteExt};
+use tokio::{
+    fs::File,
+    io::{AsyncWriteExt, BufWriter},
+};
 
 pub struct GithubClient {
     client: Client,
@@ -53,31 +56,29 @@ impl GithubClient {
         repo: &Repository,
         asset: &Asset,
         output_path: &Path,
-        pb: ProgressBar,
+        pb: &ProgressBar,
     ) -> anyhow::Result<PathBuf> {
         pb.set_message(asset.name.clone());
         let path = output_path.join(&asset.name);
         if path.exists() {
-            pb.with_style(ProgressStyle::with_template("{msg:.green}").unwrap())
-                .finish_with_message(format!("✓ File already exists for {}.", repo.repository));
+            pb.set_style(ProgressStyle::with_template("{msg:.green}").unwrap());
+            pb.finish_with_message(format!("✓ File already exists for {}.", repo.repository));
             return Ok(path);
         }
         pb.set_message(format!("Downloading {}", repo.repository));
-        let mut file = File::create(&path)
+        let file = File::create(&path)
             .await
             .with_context(|| format!("Failed to create file: {path:?}."))?;
-        // TODO: use bufwriter
+        let mut writer = BufWriter::new(file);
         let response = self.client.get(&asset.browser_download_url).send().await?;
         let mut downloaded = 0u64;
         let mut stream = response.bytes_stream();
         while let Some(Ok(chunk)) = stream.next().await {
-            file.write_all(&chunk).await?;
+            writer.write_all(&chunk).await?;
             downloaded += chunk.len() as u64;
             pb.set_position(downloaded);
         }
-        pb.with_style(ProgressStyle::with_template("{msg:.green} {bytes}").unwrap())
-            .finish_with_message(format!("✓ Downloaded {}", repo.repository));
-        file.flush().await?;
+        writer.flush().await?;
         Ok(path)
     }
 }

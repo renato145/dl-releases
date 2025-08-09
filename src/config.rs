@@ -75,6 +75,15 @@ pub async fn get_data_path() -> anyhow::Result<PathBuf> {
     Ok(path)
 }
 
+pub fn get_binaries_path() -> anyhow::Result<PathBuf> {
+    let base_dirs = BaseDirs::new().context("No valid home directory path found.")?;
+    let path = base_dirs
+        .executable_dir()
+        .context("No executable dir found.")?
+        .to_owned();
+    Ok(path)
+}
+
 pub async fn get_configuration(path: &Path) -> anyhow::Result<Configuration> {
     Config::builder()
         .add_source(config::File::from(path))
