@@ -15,7 +15,7 @@ pub struct Release {
 pub enum FindAssetError {
     #[error("No asset found for pattern: {0:?}.")]
     NoAsset(String),
-    #[error("Found {} assets for the same pattern: {pat:?}.", .assets.len())]
+    #[error("Found {} assets for the same pattern ({pat:?}): {assets:#?}.", .assets.len())]
     ManyAssets { pat: String, assets: Vec<String> },
 }
 
