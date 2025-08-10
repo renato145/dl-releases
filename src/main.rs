@@ -69,7 +69,7 @@ async fn execute_from_config(
     outpath: PathBuf,
     binaries_location: PathBuf,
 ) -> anyhow::Result<()> {
-    let config = get_configuration(&config_path).await?.read_repositories()?;
+    let config = get_configuration(&config_path)?.read_repositories()?;
     let client = GithubClient::new()?;
     let m = MultiProgress::new();
     for (repo, pat) in config {
@@ -94,7 +94,7 @@ async fn execute_from_args(
     handle_repo(&m, &client, &repo, &pat, &outpath, &binaries_location)
         .await
         .context("Failed to handle repo")?;
-    let mut config = get_configuration(&config_path).await?;
+    let mut config = get_configuration(&config_path)?;
     let repo = repo.to_string();
     if config.repos.iter().map(|o| &o.repo).contains(&repo) {
         return Ok(());
@@ -191,7 +191,10 @@ async fn handle_repo(
         m.remove(&pb2);
         m.remove(&pb3);
         pb1.with_style(ProgressStyle::with_template("{msg:.green}").unwrap())
-            .finish_with_message(format!("✓ [{}] is up to date", repo.repository));
+            .finish_with_message(format!(
+                "✓ [{}] is up to date: {current_version}",
+                repo.repository
+            ));
         Ok(())
     }
 }

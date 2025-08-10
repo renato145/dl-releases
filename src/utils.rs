@@ -6,12 +6,13 @@ use semver::Version;
 use std::{
     ffi::OsStr,
     fs::{self, File},
-    io::BufWriter,
+    io::{BufWriter, Write},
     os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
     sync::LazyLock,
 };
 use tar::Archive;
+use tempfile::NamedTempFile;
 use tokio::process::Command;
 
 pub async fn get_version(path: impl AsRef<OsStr>) -> anyhow::Result<Version> {
@@ -51,7 +52,8 @@ impl SupportedExtension {
             .as_ref()
             .file_name()
             .and_then(|x| x.to_str())
-            .context("Failed to get file_name.")?;
+            .context("Failed to get file_name.")?
+            .to_lowercase();
         if extension.ends_with(".tar.gz") {
             Ok(Self::TarGz)
         } else if extension.ends_with(".gz") {
@@ -75,10 +77,13 @@ pub fn extract_file(
     match extension {
         SupportedExtension::Gz => {
             let mut decoder = GzDecoder::new(file);
-            let output_file = File::create(&outpath).context("Failed to create output file.")?;
-            let mut writer = BufWriter::new(output_file);
+            let tmp_file = NamedTempFile::new().context("Failed to create tmp file.")?;
+            let tmp_path = tmp_file.path().to_owned();
+            let mut writer = BufWriter::new(tmp_file);
             std::io::copy(&mut decoder, &mut writer)?;
-            set_execute_permission(&outpath)?;
+            writer.flush()?;
+            set_execute_permission(&tmp_path)?;
+            fs::rename(&tmp_path, &outpath).context("Failed to move file.")?;
             Ok(outpath)
         }
         SupportedExtension::TarGz => {

@@ -84,7 +84,7 @@ pub fn get_binaries_path() -> anyhow::Result<PathBuf> {
     Ok(path)
 }
 
-pub async fn get_configuration(path: &Path) -> anyhow::Result<Configuration> {
+pub fn get_configuration(path: &Path) -> anyhow::Result<Configuration> {
     Config::builder()
         .add_source(config::File::from(path))
         .build()?
