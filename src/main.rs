@@ -163,11 +163,6 @@ async fn handle_repo(
         let asset = release.find_asset(pat)?;
         pb1.set_length(asset.size);
         let path = client.download_asset(repo, asset, outpath, &pb1).await?;
-        pb1.with_style(ProgressStyle::with_template("{msg:.green} {bytes}").unwrap())
-            .finish_with_message(format!(
-                "✓ [{}] Downloaded to {outpath:?}.",
-                repo.repository
-            ));
         let extracted_path =
             extract_file_async(path, &repo.repository, binaries_location, &pb2).await?;
         pb2.with_style(ProgressStyle::with_template("{msg:.green}").unwrap())

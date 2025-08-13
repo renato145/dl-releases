@@ -55,16 +55,11 @@ impl GithubClient {
         &self,
         repo: &Repository,
         asset: &Asset,
-        output_path: &Path,
+        outpath: &Path,
         pb: &ProgressBar,
     ) -> anyhow::Result<PathBuf> {
         pb.set_message(asset.name.clone());
-        let path = output_path.join(&asset.name);
-        if path.exists() {
-            pb.set_style(ProgressStyle::with_template("{msg:.green}").unwrap());
-            pb.finish_with_message(format!("✓ File already exists for {}.", repo.repository));
-            return Ok(path);
-        }
+        let path = outpath.join(&asset.name);
         pb.set_message(format!("Downloading {}", repo.repository));
         let file = File::create(&path)
             .await
@@ -79,6 +74,11 @@ impl GithubClient {
             pb.set_position(downloaded);
         }
         writer.flush().await?;
+        pb.set_style(ProgressStyle::with_template("{msg:.green} {bytes}").unwrap());
+        pb.finish_with_message(format!(
+            "✓ [{}] Downloaded to {outpath:?}.",
+            repo.repository
+        ));
         Ok(path)
     }
 }
