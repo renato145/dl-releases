@@ -64,6 +64,7 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Execute updates for all repositories in config file
 async fn execute_from_config(
     config_path: PathBuf,
     outpath: PathBuf,
@@ -82,6 +83,7 @@ async fn execute_from_config(
     Ok(())
 }
 
+/// Execute single repository update from command line args
 async fn execute_from_args(
     config_path: PathBuf,
     outpath: PathBuf,

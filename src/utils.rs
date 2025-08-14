@@ -15,6 +15,7 @@ use tar::Archive;
 use tempfile::NamedTempFile;
 use tokio::process::Command;
 
+/// Get version from binary by running --version command
 pub async fn get_version(path: impl AsRef<OsStr>) -> anyhow::Result<Version> {
     let output = Command::new(path)
         .arg("--version")
@@ -28,6 +29,7 @@ pub async fn get_version(path: impl AsRef<OsStr>) -> anyhow::Result<Version> {
     extract_version(&s)
 }
 
+/// Extract semver version from string using regex
 pub fn extract_version(s: &str) -> anyhow::Result<Version> {
     static RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(\d+\.\d+\.\d+)").unwrap());
     let version = RE
@@ -38,6 +40,7 @@ pub fn extract_version(s: &str) -> anyhow::Result<Version> {
     Version::parse(version).context("Failed to parse version")
 }
 
+/// File compression formats supported for extraction
 #[derive(Clone, Copy, Debug)]
 enum SupportedExtension {
     /// .gz
@@ -47,6 +50,7 @@ enum SupportedExtension {
 }
 
 impl SupportedExtension {
+    /// Determine compression format from file path
     fn from_path(path: impl AsRef<Path>) -> anyhow::Result<Self> {
         let extension = path
             .as_ref()
@@ -64,6 +68,7 @@ impl SupportedExtension {
     }
 }
 
+/// Extract specific file from .gz or .tar.gz archives
 pub fn extract_file(
     path: impl AsRef<Path>,
     fname: impl AsRef<Path>,
@@ -105,6 +110,7 @@ pub fn extract_file(
     }
 }
 
+/// Set executable permissions on file
 fn set_execute_permission(path: impl AsRef<Path>) -> anyhow::Result<()> {
     let mut perms = fs::metadata(&path)?.permissions();
     perms.set_mode(perms.mode() | 0o111);
@@ -112,6 +118,7 @@ fn set_execute_permission(path: impl AsRef<Path>) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Async wrapper for extract_file with progress tracking
 pub async fn extract_file_async(
     path: impl AsRef<Path>,
     fname: &str,

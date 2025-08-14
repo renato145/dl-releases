@@ -10,12 +10,14 @@ use std::{
 };
 use tokio::fs::{create_dir, write};
 
+/// Configuration for dl-releases with repository settings
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Configuration {
     pub repos: Vec<RepoConfig>,
 }
 
 impl Configuration {
+    /// Parse repository strings into Repository objects with patterns
     pub fn read_repositories(self) -> anyhow::Result<Vec<(Repository, String)>> {
         self.repos
             .into_iter()
@@ -23,6 +25,7 @@ impl Configuration {
             .collect::<Result<Vec<_>, _>>()
     }
 
+    /// Validate configuration for duplicate repositories
     pub fn validate(self) -> anyhow::Result<Self> {
         let duplicated_repos = self
             .repos
@@ -47,6 +50,7 @@ pub struct RepoConfig {
     pub pat: String,
 }
 
+/// Get or create config directory path (~/.config/dl-releases/config.toml)
 pub async fn get_config_path() -> anyhow::Result<PathBuf> {
     let base_dirs = BaseDirs::new().context("No valid home directory path found.")?;
     let parent = base_dirs.config_dir().join("dl-releases");
@@ -64,6 +68,7 @@ pub async fn get_config_path() -> anyhow::Result<PathBuf> {
     Ok(path)
 }
 
+/// Get or create data directory path (~/.local/share/dl-releases)
 pub async fn get_data_path() -> anyhow::Result<PathBuf> {
     let base_dirs = BaseDirs::new().context("No valid home directory path found.")?;
     let path = base_dirs.data_dir().join("dl-releases");
@@ -75,6 +80,7 @@ pub async fn get_data_path() -> anyhow::Result<PathBuf> {
     Ok(path)
 }
 
+/// Get system executable directory path
 pub fn get_binaries_path() -> anyhow::Result<PathBuf> {
     let base_dirs = BaseDirs::new().context("No valid home directory path found.")?;
     let path = base_dirs
@@ -84,6 +90,7 @@ pub fn get_binaries_path() -> anyhow::Result<PathBuf> {
     Ok(path)
 }
 
+/// Load and validate configuration from TOML file
 pub fn get_configuration(path: &Path) -> anyhow::Result<Configuration> {
     Config::builder()
         .add_source(config::File::from(path))

@@ -9,11 +9,13 @@ use tokio::{
     io::{AsyncWriteExt, BufWriter},
 };
 
+/// HTTP client for GitHub API operations
 pub struct GithubClient {
     client: Client,
 }
 
 impl GithubClient {
+    /// Create new GitHub client with user agent
     pub fn new() -> anyhow::Result<Self> {
         let client = Client::builder()
             .user_agent("dl-releases")
@@ -22,6 +24,7 @@ impl GithubClient {
         Ok(Self { client })
     }
 
+    /// Fetch latest release data from GitHub API
     pub async fn get_latest_release(&self, repo: &Repository) -> anyhow::Result<Release> {
         let url = format!(
             "https://api.github.com/repos/{}/{}/releases/latest",
@@ -51,6 +54,7 @@ impl GithubClient {
         Ok(release)
     }
 
+    /// Download asset with progress tracking
     pub async fn download_asset(
         &self,
         repo: &Repository,
