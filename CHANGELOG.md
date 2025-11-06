@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/renato145/dl-releases/compare/v0.1.0...v0.2.0) (2025-11-06)
+
+
+### Features
+
+* force install version ([e191823](https://github.com/renato145/dl-releases/commit/e1918230455ac4146ff00db1d5bb549b93e7809a))
+
 ## 0.1.0 (2025-08-13)
 
 
