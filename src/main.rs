@@ -9,10 +9,7 @@ use dl_releases::{
 };
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use itertools::Itertools;
-use std::{
-    path::{Path, PathBuf},
-    time::Duration,
-};
+use std::path::{Path, PathBuf};
 use tokio::fs::write;
 
 // TODO: add option to show release changelog
@@ -153,15 +150,23 @@ async fn handle_repo(
                 .with_prefix("[3/3]"),
         )
         .with_message("Waiting to check new version...");
-    pb2.enable_steady_tick(Duration::from_millis(100));
-    pb3.enable_steady_tick(Duration::from_millis(100));
     let current_version = get_version(&repo.repository).await?;
     let release = client
         .get_latest_release(repo)
         .await
         .context("Failed to get latest release.")?;
-    let release_version = release.version()?;
-    if release_version > current_version {
+    let release_version = release.version();
+    let replace_version = match &release_version {
+        Ok(v) => v > &current_version,
+        Err(e) => Confirm::new()
+            .with_prompt(format!(
+                "{}\n\n Do you want to anyways download and install this version?",
+                e
+            ))
+            .interact()
+            .unwrap(),
+    };
+    if replace_version {
         let asset = release.find_asset(pat)?;
         pb1.set_length(asset.size);
         let path = client.download_asset(repo, asset, outpath, &pb1).await?;
@@ -173,9 +178,11 @@ async fn handle_repo(
                 repo.repository
             ));
         let extracted_version = get_version(extracted_path).await?;
-        if extracted_version != release_version {
+        if let Ok(v) = release_version
+            && extracted_version != v
+        {
             anyhow::bail!(
-                "extracted_version ({release_version}) doesn't match the downloaded one ({extracted_version})."
+                "extracted_version ({v}) doesn't match the downloaded one ({extracted_version})."
             )
         }
         pb3.with_style(ProgressStyle::with_template("{msg:.green}").unwrap())

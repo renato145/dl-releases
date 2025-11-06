@@ -36,21 +36,20 @@ impl GithubClient {
             .send()
             .await?
             .error_for_status()?
-            .json::<serde_json::Value>()
+            .text()
             .await?;
         #[cfg(debug_assertions)]
         {
             use tokio::fs::{create_dir, write};
 
-            let s = serde_json::to_string_pretty(&raw_response)?;
             let path = Path::new("raw_outputs");
             if !path.exists() {
                 create_dir(path).await?;
             }
             let filename = repo.to_string().replace('/', "_");
-            write(path.join(format!("{filename}.json")), s).await?;
+            write(path.join(format!("{filename}.json")), &raw_response).await?;
         }
-        let release = serde_json::from_value(raw_response)?;
+        let release = eserde::json::from_str(&raw_response)?;
         Ok(release)
     }
 

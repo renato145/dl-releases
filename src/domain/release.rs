@@ -4,9 +4,10 @@
 //! including functionality to find assets by substring patterns and extract version information.
 
 use crate::utils::extract_version;
+use anyhow::Context;
+use eserde::Deserialize;
 use jiff::Timestamp;
 use semver::Version;
-use serde::Deserialize;
 
 /// Represents a GitHub release with metadata and associated assets.
 #[derive(Clone, Debug, Deserialize)]
@@ -14,8 +15,9 @@ pub struct Release {
     /// The git tag name for this release
     pub tag_name: String,
     /// Release description/notes
-    pub body: String,
+    pub body: Option<String>,
     /// When the release was created
+    #[eserde(compat)]
     pub created_at: Timestamp,
     /// List of downloadable assets for this release
     pub assets: Vec<Asset>,
@@ -57,7 +59,10 @@ impl Release {
     pub fn version(&self) -> anyhow::Result<Version> {
         match extract_version(&self.tag_name) {
             Ok(version) => Ok(version),
-            _ => extract_version(&self.body),
+            _ => {
+                let body = self.body.as_ref().context("Missing body.")?;
+                extract_version(body)
+            }
         }
     }
 }
@@ -97,10 +102,15 @@ mod tests {
                 "x86_64-unknown-linux-gnu",
                 "rust-analyzer-x86_64-unknown-linux-gnu.gz",
             ),
+            (
+                "rust-lang_rust-analyzer-2",
+                "x86_64-unknown-linux-gnu",
+                "rust-analyzer-x86_64-unknown-linux-gnu.gz",
+            ),
         ];
         for (name, pat, expected) in cases {
             let s = read_to_string(format!("src/domain/test_files/{name}.json")).unwrap();
-            let release = serde_json::from_str::<Release>(&s).unwrap();
+            let release = eserde::json::from_str::<Release>(&s).unwrap();
             let asset = release.find_asset(pat);
             expect_that!(asset, ok(field!(&Asset.name, eq(expected))));
         }
@@ -112,13 +122,17 @@ mod tests {
             ("jesseduffield_lazydocker", "0.24.1"),
             ("jesseduffield_lazygit", "0.54.1"),
             ("rust-lang_rust-analyzer", "0.3.2563"),
+            // ("rust-lang_rust-analyzer-2", "0.3.2563"),
         ];
         for (name, expected) in cases {
             let s = read_to_string(format!("src/domain/test_files/{name}.json")).unwrap();
-            let release = serde_json::from_str::<Release>(&s).unwrap();
+            let release = eserde::json::from_str::<Release>(&s).unwrap();
             let version = release.version();
             let expected = Version::parse(expected).unwrap();
             expect_that!(version, ok(eq(&expected)), "Failed for {name}");
         }
     }
+
+    #[gtest]
+    fn unable_to_find_version() {}
 }
